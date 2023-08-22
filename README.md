@@ -14,12 +14,12 @@ installed: /etc/systemd/system/sing-box@.service
 
 installed: /usr/local/bin/sing-box
 
-installed: /var/log/sing-box/sing-box.log
+installed: /var/log/sing-box/sing.log
 ```
 
 ## Usage
 
-**Install Sing-box for Xray**
+**Install Sing-box**
 
 ```
  bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/main/install.sh)" -- install
@@ -28,13 +28,13 @@ installed: /var/log/sing-box/sing-box.log
 **Install Sing-box Using GO**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/main/install.sh)" -- install --type=go
+ bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/main/install.sh)" -- install --go
 ```
 
 **Install Sing-box Using GO with custom Tags**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/main/install.sh)" -- install --tag=with_gvisor,with_dhcp --type=go
+ bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/main/install.sh)" -- install --tag=with_gvisor,with_dhcp --go
 ```
 
 **Remove Sing-box**

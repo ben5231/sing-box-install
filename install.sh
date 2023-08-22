@@ -5,6 +5,7 @@ action=
 tag=
 type=
 go_type=
+remove_type=
 
 identify_the_operating_system_and_architecture() {
   if [[ "$(uname)" == 'Linux' ]]; then
@@ -47,9 +48,6 @@ identify_the_operating_system_and_architecture() {
         ;;
       'ppc64le')
         MACHINE='ppc64le'
-        ;;
-      'riscv64')
-        MACHINE='riscv64'
         ;;
       's390x')
         MACHINE='s390x'
@@ -131,6 +129,26 @@ curl() {
   $(type -P curl) -L -q --retry 5 --retry-delay 10 --retry-max-time 60 "$@" || echo -e "Error: Curl Failed, check your network"
 }
 
+install_log_and_config() {
+  if [ ! -d /var/log/sing-box ];then 
+    install -d -m 700 /var/log/sing-box || echo "Error: Failed to Install: /var/log/sing-box/"
+    echo "Installed: /var/log/sing-box/"
+    install -m 700 /dev/zero /var/log/sing-box/sing.log || echo "Error: Failed to Install: /var/log/sing-box/sing.log"
+    echo "Installed: /var/log/sing-box/sing.log"
+  fi
+  if [ ! -d /usr/local/etc/sing-box ];then
+    install -d -m 700 /usr/local/etc/sing-box || echo "Error: Failed to Install: /usr/local/etc/sing-box"
+    echo "Installed: /usr/local/etc/sing-box"
+    install -m 700 /dev/zero /usr/local/etc/sing-box/config.json || echo "Error: Failed to Install: /usr/local/etc/sing-box/config.json"
+    echo "Installed: /usr/local/etc/sing-box/config.json"
+    cat <<EOF > /usr/local/etc/sing-box/config.json
+{
+
+}
+EOF
+  fi
+}
+
 # Function for service installation
 install_service() {
   cat <<EOF > /etc/systemd/system/sing-box.service
@@ -151,6 +169,7 @@ LimitNOFILE=infinity
 [Install]
 WantedBy=multi-user.target
 EOF
+  echo -e "Installed: /etc/systemd/system/sing-box.service"
   cat <<EOF > /etc/systemd/system/sing-box@.service
 [Unit]
 After=network.target nss-lookup.target
@@ -169,72 +188,136 @@ LimitNOFILE=infinity
 [Install]
 WantedBy=multi-user.target
 EOF
+  echo -e "Installed: /etc/systemd/system/sing-box@.service"
+  if systemctl enable sing-box && systemctl start sing-box;then
+    echo "Info: Enable and start sing-box.service"
+  else
+    echo "Error: Failed to enable and start sing-box.service"
+    exit 1
+  fi
 }
 
 # Function for go_installation
 go_install() {
   install_software "go" "go"
-  [ $MACHINE == amd64 ] && GOAMD64=v2
-  if [ go_type == default ];then
+  [[ $MACHINE == amd64 ]] && GOAMD64=v2
+  if [[ $go_type == default ]];then
     echo -e "\
-Use \033[38;5;208m@chika0801\033[0m's template by default\
+Use \033[38;5;208m@chika0801\033[0m's template by default.
 "
-    CGO_ENABLED=1 GOOS=linux GOARCH=$MACHINE \
-    go install -v -tags with_wireguard,with_quic,with_utls,with_reality_server github.com/sagernet/sing-box/cmd/sing-box@dev-next
-  elif [ go_type == custom ]; then
+    if ! CGO_ENABLED=1 GOOS=linux GOARCH=$MACHINE \
+    go install -v -tags with_wireguard,with_quic,with_utls,with_reality_server github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
+      echo -e "Go Install Failed.\nExiting."
+      exit 1
+    fi
+  elif [[ $go_type == custom ]]; then
     echo -e "\
 Using custom config:
 Tags: $tag\
 "
-    CGO_ENABLED=1 GOOS=linux GOARCH=$MACHINE \
-    go install -v -tags $tag github.com/sagernet/sing-box/cmd/sing-box@dev-next
+    if ! CGO_ENABLED=1 GOOS=linux GOARCH=$MACHINE \
+    go install -v -tags $tag github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
+      echo -e "Go Install Failed.\nExiting."
+      exit 1
+    fi
   fi
   ln -s /root/go/bin/sing-box /usr/local/bin/sing-box
-  install_service
+  echo -e "\
+Installed: /usr/local/bin/sing-box
+Installed: /root/go/bin/sing-box\
+"
 }
 
 # Function for installation
-install() {
+curl_install() {
   check_root
-  if [ $type == go ];then
-    [ -z $go_type ] && go_type=default
+  identify_the_operating_system_and_architecture
+  if [[ $type == go ]];then
+    [[ -z $go_type ]] && go_type=default
     go_install
-  fi
-  [ $MACHINE == amd64 ] && CURL_MACHINE=amd64
-  [ $MACHINE == arm ] && CURL_MACHINE=armv7
-  [ $MACHINE == arm64 ] && CURL_MACHINE=arm64
-  if [ $CURL_MACHINE == amd64 ] || [ $CURL_MACHINE == arm64 ] ||[ $CURL_MACHINE == armv7 ]; then
-    SING_VERSION=$(curl https://api.github.com/repos/SagerNet/sing-box/releases|grep -oP "sing-box-\d+\.\d+\.\d+-linux-'$CURL_MACHINE'"| sort -Vr | head -n 1)
-    curl -o $SING_VERSION.tar.gz https://github.com/SagerNet/sing-box/releases/latest/download/$SING_VERSION.tar.gz
-    tar -xzf $SING_VERSION.tar.gz -C /tmp
-    SING_TMP=$(ls /tmp | grep -P 'sing-box-\d+\.\d+\.\d+-linux-amd64')
-    cp /tmp/$SING_TMP/sing-box /usr/local/bin/sing-box
-    chmod +x /usr/local/bin/sing-box
   else
-  echo -e "\
+    [[ $MACHINE == amd64 ]] && CURL_MACHINE=amd64
+    [[ $MACHINE == arm ]] && CURL_MACHINE=armv7
+    [[ $MACHINE == arm64 ]] && CURL_MACHINE=arm64
+    if [[ $CURL_MACHINE == amd64 ]] || [[ $CURL_MACHINE == arm64 ]] || [[ $CURL_MACHINE == armv7 ]]; then
+      SING_VERSION=$(curl https://api.github.com/repos/SagerNet/sing-box/releases|grep -oP "sing-box-\d+\.\d+\.\d+-linux-$CURL_MACHINE"| sort -Vr | head -n 1)
+      echo "Newest version found: $SING_VERSION"
+      curl -o /tmp/$SING_VERSION.tar.gz https://github.com/SagerNet/sing-box/releases/latest/download/$SING_VERSION.tar.gz
+      tar -xzf /tmp/$SING_VERSION.tar.gz -C /tmp
+      cp -r /tmp/$SING_VERSION/sing-box /usr/local/bin/sing-box
+      chmod +x /usr/local/bin/sing-box
+      echo -e "\
+Installed: /usr/local/bin/sing-box\
+"
+    else
+      echo -e "\
 Machine Type Not Support
 Try to use \"--type=go\" to install\
 "
+      exit 1
+    fi
   fi
+
+  install_log_and_config
   install_service
+
+  echo -e "\
+Installation Complete\
+"
+  exit
 }
 
 # Function for uninstallation
 uninstall() {
   check_root
-
+  if ! ls /etc/systemd/system/sing-box.service >/dev/null 2>&1 ;then
+    echo -e "Sing-box not Installed.\nExiting."
+    exit 1
+  fi
+  if [[ $remove_type == purge ]];then
+    rm -rf /usr/local/etc/sing-box /var/log/sing-box
+    echo -e "\
+Removed: /usr/local/etc/sing-box/
+Removed: /var/log/sing-box/\
+"
+  fi
+  rm -rf /usr/local/bin/sing-box /etc/systemd/system/sing-box.service /etc/systemd/system/sing-box@.service
+  echo -e "\
+Removed: /usr/local/bin/sing-box
+Removed: /etc/systemd/system/sing-box.service
+Removed: /etc/systemd/system/sing-box@.service\
+"
+  exit
 }
 # Show help
 help() {
-  echo -e "\
-This is a help
+  echo -e "usage: $0 ACTION [OPTION]...
+
+ACTION:
+install                   Install/Update Sing-box
+remove                    Remove Sing-box
+help                      Show help
+If no action is specified, then help will be selected
+
+OPTION:
+  install:
+    --go                      If it's specified, the scrpit will use go to install Sing-box. 
+                              If it's not specified, the scrpit will use curl by default.
+    --tag=[Tags]              Sing-box Install tag, if you specified it, the script will use go to install Sing-box, and use your custom tags. 
+                              If it's not specified, the scrpit will use \033[38;5;208m@chika0801\033[0m's template by default.
+  remove:
+    --purge                   Remove all the Sing-box files, include logs, configs, etc
 "
+  exit 0
 }
 # Parse command line arguments
 for arg in "$@"; do
   case $arg in
-    --type=*)
-      type="${arg#*=}"
+    --purge)
+      remove_type="purge"
+      ;;
+    --go)
+      type="go"
       ;;
     --tag=*)
       tag="${arg#*=}"
@@ -266,7 +349,7 @@ case "$action" in
     uninstall
     ;;
   install)
-    install
+    curl_install
     ;;
   *)
     echo "No action specified. Exiting..."
