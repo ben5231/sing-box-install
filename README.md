@@ -22,25 +22,25 @@ installed: /var/log/sing-box/sing.log
 **Install Sing-box**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/main/install.sh)" -- install
+ bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/master/install.sh)" -- install
 ```
 
 **Install Sing-box Using GO**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/main/install.sh)" -- install --go
+ bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/master/install.sh)" -- install --go
 ```
 
 **Install Sing-box Using GO with custom Tags**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/main/install.sh)" -- install --tag=with_gvisor,with_dhcp --go
+ bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/master/install.sh)" -- install --tag=with_gvisor,with_dhcp --go
 ```
 
 **Remove Sing-box**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/main/install.sh)" -- remove
+ bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/master/install.sh)" -- remove
 ```
 
 ## Star History

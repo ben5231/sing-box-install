@@ -133,13 +133,13 @@ install_log_and_config() {
   if [ ! -d /var/log/sing-box ];then 
     install -d -m 700 /var/log/sing-box || echo "Error: Failed to Install: /var/log/sing-box/"
     echo "Installed: /var/log/sing-box/"
-    install -m 700 /dev/zero /var/log/sing-box/sing.log || echo "Error: Failed to Install: /var/log/sing-box/sing.log"
+    install -m 700 /dev/null /var/log/sing-box/sing.log || echo "Error: Failed to Install: /var/log/sing-box/sing.log"
     echo "Installed: /var/log/sing-box/sing.log"
   fi
   if [ ! -d /usr/local/etc/sing-box ];then
     install -d -m 700 /usr/local/etc/sing-box || echo "Error: Failed to Install: /usr/local/etc/sing-box"
     echo "Installed: /usr/local/etc/sing-box"
-    install -m 700 /dev/zero /usr/local/etc/sing-box/config.json || echo "Error: Failed to Install: /usr/local/etc/sing-box/config.json"
+    install -m 700 /dev/null /usr/local/etc/sing-box/config.json || echo "Error: Failed to Install: /usr/local/etc/sing-box/config.json"
     echo "Installed: /usr/local/etc/sing-box/config.json"
     cat <<EOF > /usr/local/etc/sing-box/config.json
 {
@@ -199,7 +199,19 @@ EOF
 
 # Function for go_installation
 go_install() {
-  install_software "go" "go"
+  if ! install_software "go" "go" ;then
+    echo -e "\033[1;97mINFO: This is not a network error\033[0m
+May just because your package manager don't have \"go\"
+Trying use Official Install Script\
+" 
+    curl -sLo go.tar.gz https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
+    rm -rf /usr/local/go
+    tar -C /usr/local -xzf go.tar.gz
+    rm go.tar.gz
+    echo -e "export PATH=$PATH:/usr/local/go/bin" > /etc/profile.d/go.sh
+    source /etc/profile.d/go.sh
+    go version
+  fi
   [[ $MACHINE == amd64 ]] && GOAMD64=v2
   if [[ $go_type == default ]];then
     echo -e "\
@@ -221,7 +233,7 @@ Tags: $tag\
       exit 1
     fi
   fi
-  ln -s /root/go/bin/sing-box /usr/local/bin/sing-box
+  ln -sf /root/go/bin/sing-box /usr/local/bin/sing-box
   echo -e "\
 Installed: /usr/local/bin/sing-box
 Installed: /root/go/bin/sing-box\
