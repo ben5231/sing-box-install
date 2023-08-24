@@ -190,9 +190,9 @@ WantedBy=multi-user.target
 EOF
   echo -e "Installed: /etc/systemd/system/sing-box@.service"
   if systemctl enable sing-box && systemctl start sing-box;then
-    echo "Info: Enable and start sing-box.service"
+    echo "INFO: Enable and start sing-box.service"
   else
-    echo "Error: Failed to enable and start sing-box.service"
+    echo -e "\033[1;31m\033[1mERROR:\033[0m Failed to enable and start sing-box.service"
     exit 1
   fi
 }
@@ -215,7 +215,7 @@ Trying use Official Install Script\
   [[ $MACHINE == amd64 ]] && GOAMD64=v2
   if [[ $go_type == default ]];then
     echo -e "\
-Use \033[38;5;208m@chika0801\033[0m's template by default.
+Use \033[38;5;208m@chika0801\033[0m's template by default.\
 "
     if ! CGO_ENABLED=1 GOOS=linux GOARCH=$MACHINE \
     go install -v -tags with_wireguard,with_quic,with_utls,with_reality_server github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
@@ -284,6 +284,12 @@ uninstall() {
   check_root
   if ! ls /etc/systemd/system/sing-box.service >/dev/null 2>&1 ;then
     echo -e "Sing-box not Installed.\nExiting."
+    exit 1
+  fi
+  if systemctl stop sing-box && systemctl disable sing-box ;then
+    echo -e "INFO: Stop and disable sing-box.service"
+  else
+    echo -e "\033[1;31m\033[1mERROR:\033[0m Failed to Stop and disable sing-box.service"
     exit 1
   fi
   if [[ $remove_type == purge ]];then
