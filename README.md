@@ -1,4 +1,3 @@
-# [WIP]
 # Sing-box-Install
 
 Bash script for installing Sing-box in operating systems such as Arch / CentOS / Debian / OpenSUSE that support systemd.
