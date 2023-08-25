@@ -21,11 +21,9 @@ identify_the_operating_system_and_architecture() {
         ;;
       'armv6l')
         MACHINE='arm'
-        grep Features /proc/cpuinfo | grep -qw 'vfp' || MACHINE='arm32-v5'
         ;;
       'armv7' | 'armv7l')
         MACHINE='arm'
-        grep Features /proc/cpuinfo | grep -qw 'vfp' || MACHINE='arm32-v5'
         ;;
       'armv8' | 'aarch64')
         MACHINE='arm64'
@@ -105,18 +103,6 @@ identify_the_operating_system_and_architecture() {
   fi
 }
 
-# Function for software installation
-install_software() {
-  package_name="$1"
-  file_to_detect="$2"
-  type -P "$file_to_detect" > /dev/null 2>&1 && return
-  if ${PACKAGE_MANAGEMENT_INSTALL} "$package_name" >/dev/null 2>&1; then
-    echo "info: $package_name is installed."
-  else
-    echo "error: Installation of $package_name failed, please check your network."
-    exit 1
-  fi
-}
 # Function for check wheater user is running at root
 check_root() {
   if [[ $EUID -ne 0 ]]; then
@@ -137,15 +123,31 @@ install_log_and_config() {
     echo "Installed: /var/log/sing-box/sing.log"
   fi
   if [ ! -d /usr/local/etc/sing-box ];then
-    install -d -m 700 /usr/local/etc/sing-box || echo "Error: Failed to Install: /usr/local/etc/sing-box"
-    echo "Installed: /usr/local/etc/sing-box"
-    install -m 700 /dev/null /usr/local/etc/sing-box/config.json || echo "Error: Failed to Install: /usr/local/etc/sing-box/config.json"
-    echo "Installed: /usr/local/etc/sing-box/config.json"
+    if ! install -d -m 700 /usr/local/etc/sing-box;then
+      echo "Error: Failed to Install: /usr/local/etc/sing-box"
+      exit 1
+    else
+      echo "Installed: /usr/local/etc/sing-box"
+    fi
+    if ! install -m 700 /dev/null /usr/local/etc/sing-box/config.json;then
+      echo "Error: Failed to Install: /usr/local/etc/sing-box/config.json"
+      exit 1
+    else
+      echo "Installed: /usr/local/etc/sing-box/config.json"
+    fi
     cat <<EOF > /usr/local/etc/sing-box/config.json
 {
 
 }
 EOF
+  fi
+  if [ ! -d /usr/local/share/sing-box ];then
+    if ! install -d -m 700 /usr/local/share/sing-box;then
+      echo "Error: Failed to Install: /usr/local/share/sing-box"
+      exit 1
+    else
+      echo "Installed: /usr/local/share/sing-box"
+    fi
   fi
 }
 
@@ -157,7 +159,7 @@ After=network.target nss-lookup.target
 
 [Service]
 User=root
-WorkingDirectory=/usr/local/etc/sing-box/
+WorkingDirectory=/usr/local/share/sing-box
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 ExecStart=/usr/local/bin/sing-box run -c /usr/local/etc/sing-box/config.json
@@ -176,7 +178,7 @@ After=network.target nss-lookup.target
 
 [Service]
 User=root
-WorkingDirectory=/usr/local/etc/sing-box/
+WorkingDirectory=/usr/local/share/sing-box
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 ExecStart=/usr/local/bin/sing-box run -c /usr/local/etc/sing-box/%i.json
@@ -199,19 +201,18 @@ EOF
 
 # Function for go_installation
 go_install() {
-  if ! install_software "go" "go" ;then
-    echo -e "\033[1;97mINFO: This is not a network error\033[0m
-May just because your package manager don't have \"go\"
-Trying use Official Install Script\
-" 
-    curl -sLo go.tar.gz https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
+  if ! _GO_PATH_=$(which go);then
+    echo -e "INFO: Installing go" 
+    curl -sLo /tmp/go.tar.gz https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
     rm -rf /usr/local/go
-    tar -C /usr/local -xzf go.tar.gz
-    rm go.tar.gz
+    tar -C /usr/local -xzf /tmp/go.tar.gz
+    rm /tmp/go.tar.gz
     echo -e "export PATH=$PATH:/usr/local/go/bin" > /etc/profile.d/go.sh
     source /etc/profile.d/go.sh
     go version
+    _GO_PATH_=$(which go)
   fi
+  echo -e "INFO: go installed PATH: $_GO_PATH_"
   [[ $MACHINE == amd64 ]] && GOAMD64=v2
   if [[ $go_type == default ]];then
     echo -e "\
@@ -276,14 +277,14 @@ Try to use \"--type=go\" to install\
   echo -e "\
 Installation Complete\
 "
-  exit
+  exit 0
 }
 
 # Function for uninstallation
 uninstall() {
   check_root
   if ! ls /etc/systemd/system/sing-box.service >/dev/null 2>&1 ;then
-    echo -e "Sing-box not Installed.\nExiting."
+    echo -e "sing-box not Installed.\nExiting."
     exit 1
   fi
   if systemctl stop sing-box && systemctl disable sing-box ;then
@@ -293,10 +294,11 @@ uninstall() {
     exit 1
   fi
   if [[ $remove_type == purge ]];then
-    rm -rf /usr/local/etc/sing-box /var/log/sing-box
+    rm -rf /usr/local/etc/sing-box /var/log/sing-box /usr/local/share/sing-box
     echo -e "\
 Removed: /usr/local/etc/sing-box/
-Removed: /var/log/sing-box/\
+Removed: /var/log/sing-box/
+Removed: /usr/local/share/sing-box/\
 "
   fi
   rm -rf /usr/local/bin/sing-box /etc/systemd/system/sing-box.service /etc/systemd/system/sing-box@.service
@@ -305,26 +307,26 @@ Removed: /usr/local/bin/sing-box
 Removed: /etc/systemd/system/sing-box.service
 Removed: /etc/systemd/system/sing-box@.service\
 "
-  exit
+  exit 0
 }
 # Show help
 help() {
   echo -e "usage: $0 ACTION [OPTION]...
 
 ACTION:
-install                   Install/Update Sing-box
-remove                    Remove Sing-box
+install                   Install/Update sing-box
+remove                    Remove sing-box
 help                      Show help
 If no action is specified, then help will be selected
 
 OPTION:
   install:
-    --go                      If it's specified, the scrpit will use go to install Sing-box. 
+    --go                      If it's specified, the scrpit will use go to install sing-box. 
                               If it's not specified, the scrpit will use curl by default.
-    --tag=[Tags]              Sing-box Install tag, if you specified it, the script will use go to install Sing-box, and use your custom tags. 
+    --tag=[Tags]              sing-box Install tag, if you specified it, the script will use go to install sing-box, and use your custom tags. 
                               If it's not specified, the scrpit will use \033[38;5;208m@chika0801\033[0m's template by default.
   remove:
-    --purge                   Remove all the Sing-box files, include logs, configs, etc
+    --purge                   Remove all the sing-box files, include logs, configs, etc
 "
   exit 0
 }

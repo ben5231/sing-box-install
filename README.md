@@ -1,47 +1,55 @@
-# Sing-box-Install
+# sing-box-Install
 
-Bash script for installing Sing-box in operating systems such as Arch / CentOS / Debian / OpenSUSE that support systemd.
+Bash script for installing sing-box in operating systems such as Arch / CentOS / Debian / OpenSUSE that support systemd.
 
 [Filesystem Hierarchy Standard (FHS)](https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard) 
 
 Upstream URL: 
-[Sing-box](https://github.com/SagerNet/sing-box/) 
+[sing-box](https://github.com/SagerNet/sing-box/) 
 
 ```
-installed: /etc/systemd/system/sing-box.service
-installed: /etc/systemd/system/sing-box@.service
+Installed: /etc/systemd/system/sing-box.service
+Installed: /etc/systemd/system/sing-box@.service
 
-installed: /usr/local/bin/sing-box
+Installed: /usr/local/bin/sing-box
 
-installed: /var/log/sing-box/sing.log
+Installed: /var/log/sing-box/sing.log
+```
+```
+Will be Install after sing-box run:
+/usr/local/share/sing-box/geoip.db
+/usr/local/share/sing-box/geosite.db
 ```
 
 ## Usage
 
-**Install Sing-box**
+**Install sing-box**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/master/install.sh)" -- install
+ bash -c "$(curl -L https://github.com/KoinuDayo/sing-box-Install/raw/master/install.sh)" -- install
 ```
 
-**Install Sing-box Using GO**
+**Install sing-box Using GO**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/master/install.sh)" -- install --go
+ bash -c "$(curl -L https://github.com/KoinuDayo/sing-box-Install/raw/master/install.sh)" -- install --go
 ```
 
-**Install Sing-box Using GO with custom Tags**
+**Install sing-box Using GO with custom Tags**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/master/install.sh)" -- install --tag=with_gvisor,with_dhcp --go
+ bash -c "$(curl -L https://github.com/KoinuDayo/sing-box-Install/raw/master/install.sh)" -- install --tag=with_gvisor,with_dhcp --go
 ```
 
-**Remove Sing-box**
+**Remove sing-box**
 
 ```
- bash -c "$(curl -L https://github.com/KoinuDayo/Sing-box-Install/raw/master/install.sh)" -- remove
+ bash -c "$(curl -L https://github.com/KoinuDayo/sing-box-Install/raw/master/install.sh)" -- remove
 ```
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=KoinuDayo/Sing-box-Install&type=Timeline)](https://star-history.com/#KoinuDayo/Sing-box-Install&Timeline)
+[![Star History Chart](https://api.star-history.com/svg?repos=KoinuDayo/sing-box-Install&type=Timeline)](https://star-history.com/#KoinuDayo/sing-box-Install&Timeline)
+
+## Thanks
+[@chika0801](https://github.com/chika0801)
