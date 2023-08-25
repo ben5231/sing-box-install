@@ -103,6 +103,18 @@ identify_the_operating_system_and_architecture() {
   fi
 }
 
+install_software() {
+  package_name="$1"
+  file_to_detect="$2"
+  type -P "$file_to_detect" > /dev/null 2>&1 && return
+  if ${PACKAGE_MANAGEMENT_INSTALL} "$package_name" >/dev/null 2>&1; then
+    echo "info: $package_name is installed."
+  else
+    echo "error: Installation of $package_name failed, please check your network."
+    exit 1
+  fi
+}
+
 # Function for check wheater user is running at root
 check_root() {
   if [[ $EUID -ne 0 ]]; then
@@ -201,6 +213,7 @@ EOF
 
 # Function for go_installation
 go_install() {
+  install_software "which" "which"
   if ! _GO_PATH_=$(which go);then
     echo -e "INFO: Installing go" 
     curl -sLo /tmp/go.tar.gz https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
