@@ -124,7 +124,7 @@ check_root() {
 }
 
 curl() {
-  $(type -P curl) -L -q --retry 5 --retry-delay 10 --retry-max-time 60 "$@" || echo -e "Error: Curl Failed, check your network"
+  $(type -P curl) -L -q --retry 5 --retry-delay 10 --retry-max-time 60 "$@" || $(echo -e "Error: Curl Failed, check your network" && exit 1)
 }
 
 install_log_and_config() {
@@ -202,21 +202,52 @@ EOF
 }
 
 # Function for go_installation
+install_go() {
+    [[ $MACHINE == 386 ]] && GO_MACHINE=386
+    [[ $MACHINE == amd64 ]] && GO_MACHINE=amd64
+    [[ $MACHINE == arm ]] && GO_MACHINE=armv6l
+    [[ $MACHINE == arm64 ]] && GO_MACHINE=arm64
+    if [[ $GO_MACHINE == amd64 ]] || [[ $GO_MACHINE == arm64 ]] || [[ $GO_MACHINE == armv6l ]] || [[ $GO_MACHINE == 386 ]]; then
+      GO_VERSION=$(curl -sL https://go.dev/dl/ | sed -n 's/.*\(go[0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
+      echo -e "INFO: Installing go" 
+      curl -o /tmp/go.tar.gz https://go.dev/dl/$GO_VERSION.linux-$GO_MACHINE.tar.gz
+      rm -rf /usr/local/go
+      tar -C /usr/local -xzf /tmp/go.tar.gz
+      rm /tmp/go.tar.gz
+      echo -e "export PATH=\$PATH:/usr/local/go/bin" > /etc/profile.d/go.sh
+      source /etc/profile.d/go.sh
+      go version
+      GO_PATH=$(which go)
+      # install go for every users
+      for user in $(ls /home); do
+          local user_home="/home/$user"
+          local bashrc_path="$user_home/.bashrc"
+          local userid=$(id -u $user)
+          local usergid=$(id -g $user)
+          if [ -f "$bashrc_path" ]; then
+            if ! grep -q "export PATH=\$PATH:/usr/local/go/bin" "$bashrc_path"; then
+              echo "export PATH=\$PATH:/usr/local/go/bin" >> "$bashrc_path"
+              chown $userid:$usergid "$bashrc_path"
+            fi
+          fi
+      done
+      if ! grep -q "export PATH=\$PATH:/usr/local/go/bin" "/root/.bashrc"; then
+        echo -e "export PATH=\$PATH:/usr/local/go/bin" >> /root/.bashrc
+      fi
+    else
+      echo "ERROR: The architecture is not supported. Try to install go by yourself"
+      exit 1
+    fi
+  echo -e "INFO: go installed PATH: $GO_PATH"
+}
 go_install() {
   install_software "which" "which"
   install_software "gcc" "gcc"
-  if ! _GO_PATH_=$(which go);then
-    echo -e "INFO: Installing go" 
-    curl -Lo /tmp/go.tar.gz https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
-    rm -rf /usr/local/go
-    tar -C /usr/local -xzf /tmp/go.tar.gz
-    rm /tmp/go.tar.gz
-    echo -e "export PATH=$PATH:/usr/local/go/bin" > /etc/profile.d/go.sh
-    source /etc/profile.d/go.sh
-    go version
-    _GO_PATH_=$(which go)
+
+  if ! GO_PATH=$(which go);then
+    install_go
   fi
-  echo -e "INFO: go installed PATH: $_GO_PATH_"
+
   [[ $MACHINE == amd64 ]] && GOAMD64=v2
   if [[ $go_type == default ]];then
     echo -e "\
