@@ -128,12 +128,6 @@ curl() {
 }
 
 install_log_and_config() {
-  if [ ! -d /var/log/sing-box ];then 
-    install -d -m 700 /var/log/sing-box || echo "Error: Failed to Install: /var/log/sing-box/"
-    echo "Installed: /var/log/sing-box/"
-    install -m 700 /dev/null /var/log/sing-box/sing.log || echo "Error: Failed to Install: /var/log/sing-box/sing.log"
-    echo "Installed: /var/log/sing-box/sing.log"
-  fi
   if [ ! -d /usr/local/etc/sing-box ];then
     if ! install -d -m 700 /usr/local/etc/sing-box;then
       echo "Error: Failed to Install: /usr/local/etc/sing-box"
@@ -146,12 +140,8 @@ install_log_and_config() {
       exit 1
     else
       echo "Installed: /usr/local/etc/sing-box/config.json"
+      echo -e "{\n\n}" > /usr/local/etc/sing-box/config.json
     fi
-    cat <<EOF > /usr/local/etc/sing-box/config.json
-{
-
-}
-EOF
   fi
   if [ ! -d /usr/local/share/sing-box ];then
     if ! install -d -m 700 /usr/local/share/sing-box;then
@@ -214,9 +204,10 @@ EOF
 # Function for go_installation
 go_install() {
   install_software "which" "which"
+  install_software "gcc" "gcc"
   if ! _GO_PATH_=$(which go);then
     echo -e "INFO: Installing go" 
-    curl -sLo /tmp/go.tar.gz https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
+    curl -Lo /tmp/go.tar.gz https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
     rm -rf /usr/local/go
     tar -C /usr/local -xzf /tmp/go.tar.gz
     rm /tmp/go.tar.gz
@@ -249,39 +240,43 @@ Tags: $tag\
   fi
   ln -sf /root/go/bin/sing-box /usr/local/bin/sing-box
   echo -e "\
-Installed: /usr/local/bin/sing-box
-Installed: /root/go/bin/sing-box\
+Installed: /root/go/bin/sing-box
+Installed: /usr/local/bin/sing-box\
 "
 }
 
 # Function for installation
 curl_install() {
+  [[ $MACHINE == amd64 ]] && CURL_MACHINE=amd64
+  [[ $MACHINE == arm ]] && CURL_MACHINE=armv7
+  [[ $MACHINE == arm64 ]] && CURL_MACHINE=arm64
+  if [[ $CURL_MACHINE == amd64 ]] || [[ $CURL_MACHINE == arm64 ]] || [[ $CURL_MACHINE == armv7 ]]; then
+    SING_VERSION=$(curl https://api.github.com/repos/SagerNet/sing-box/releases|grep -oP "sing-box-\d+\.\d+\.\d+-linux-$CURL_MACHINE"| sort -Vr | head -n 1)
+    echo "Newest version found: $SING_VERSION"
+    curl -o /tmp/$SING_VERSION.tar.gz https://github.com/SagerNet/sing-box/releases/latest/download/$SING_VERSION.tar.gz
+    tar -xzf /tmp/$SING_VERSION.tar.gz -C /tmp
+    cp -r /tmp/$SING_VERSION/sing-box /usr/local/bin/sing-box
+    chmod +x /usr/local/bin/sing-box
+    echo -e "\
+Installed: /usr/local/bin/sing-box\
+"
+  else
+    echo -e "\
+Machine Type Not Support
+Try to use \"--type=go\" to install\
+"
+    exit 1
+  fi
+}
+main() {
   check_root
   identify_the_operating_system_and_architecture
+
   if [[ $type == go ]];then
     [[ -z $go_type ]] && go_type=default
     go_install
   else
-    [[ $MACHINE == amd64 ]] && CURL_MACHINE=amd64
-    [[ $MACHINE == arm ]] && CURL_MACHINE=armv7
-    [[ $MACHINE == arm64 ]] && CURL_MACHINE=arm64
-    if [[ $CURL_MACHINE == amd64 ]] || [[ $CURL_MACHINE == arm64 ]] || [[ $CURL_MACHINE == armv7 ]]; then
-      SING_VERSION=$(curl https://api.github.com/repos/SagerNet/sing-box/releases|grep -oP "sing-box-\d+\.\d+\.\d+-linux-$CURL_MACHINE"| sort -Vr | head -n 1)
-      echo "Newest version found: $SING_VERSION"
-      curl -o /tmp/$SING_VERSION.tar.gz https://github.com/SagerNet/sing-box/releases/latest/download/$SING_VERSION.tar.gz
-      tar -xzf /tmp/$SING_VERSION.tar.gz -C /tmp
-      cp -r /tmp/$SING_VERSION/sing-box /usr/local/bin/sing-box
-      chmod +x /usr/local/bin/sing-box
-      echo -e "\
-Installed: /usr/local/bin/sing-box\
-"
-    else
-      echo -e "\
-Machine Type Not Support
-Try to use \"--type=go\" to install\
-"
-      exit 1
-    fi
+    curl_install
   fi
 
   install_log_and_config
@@ -382,7 +377,7 @@ case "$action" in
     uninstall
     ;;
   install)
-    curl_install
+    main
     ;;
   *)
     echo "No action specified. Exiting..."

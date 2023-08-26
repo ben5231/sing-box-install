@@ -12,8 +12,6 @@ Installed: /etc/systemd/system/sing-box.service
 Installed: /etc/systemd/system/sing-box@.service
 
 Installed: /usr/local/bin/sing-box
-
-Installed: /var/log/sing-box/sing.log
 ```
 ```
 Will be Install after sing-box run:
