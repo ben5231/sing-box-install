@@ -118,34 +118,37 @@ install_software() {
 # Function for check wheater user is running at root
 check_root() {
   if [[ $EUID -ne 0 ]]; then
-    echo "You have to use root to run this script"
+    echo -e "\033[1;31m\033[1mERROR:\033[0m You have to use root to run this script"
     exit 1
   fi
 }
 
 curl() {
-  $(type -P curl) -L -q --retry 5 --retry-delay 10 --retry-max-time 60 "$@" || $(echo -e "Error: Curl Failed, check your network" && exit 1)
+  if ! $(type -P curl) -L -q --retry 5 --retry-delay 10 --retry-max-time 60 "$@";then
+    echo -e "\033[1;31m\033[1mERROR:\033[0m Curl Failed, check your network"
+    exit 1
+  fi
 }
 
 install_log_and_config() {
   if [ ! -d /usr/local/etc/sing-box ];then
     if ! install -d -m 700 /usr/local/etc/sing-box;then
-      echo "Error: Failed to Install: /usr/local/etc/sing-box"
+      echo -e "\033[1;31m\033[1mERROR:\033[0m Failed to Install: /usr/local/etc/sing-box"
       exit 1
     else
       echo "Installed: /usr/local/etc/sing-box"
     fi
     if ! install -m 700 /dev/null /usr/local/etc/sing-box/config.json;then
-      echo "Error: Failed to Install: /usr/local/etc/sing-box/config.json"
+      echo -e "\033[1;31m\033[1mERROR:\033[0m Failed to Install: /usr/local/etc/sing-box/config.json"
       exit 1
     else
-      echo "Installed: /usr/local/etc/sing-box/config.json"
+      echo -e "Installed: /usr/local/etc/sing-box/config.json"
       echo -e "{\n\n}" > /usr/local/etc/sing-box/config.json
     fi
   fi
   if [ ! -d /usr/local/share/sing-box ];then
     if ! install -d -m 700 /usr/local/share/sing-box;then
-      echo "Error: Failed to Install: /usr/local/share/sing-box"
+      echo "\033[1;31m\033[1mERROR:\033[0m Failed to Install: /usr/local/share/sing-box"
       exit 1
     else
       echo "Installed: /usr/local/share/sing-box"
@@ -201,6 +204,40 @@ EOF
   fi
 }
 
+install_building_components() {
+  if [[ $PACKAGE_MANAGEMENT_INSTALL == 'apt -y --no-install-recommends install' ]]; then
+    if ! dpkg -l | grep build-essential;then
+      echo -e "\e[93mWARN\e[0m: Building components not found, Installing."
+      ${PACKAGE_MANAGEMENT_INSTALL} build-essential
+    fi
+  elif [[ $PACKAGE_MANAGEMENT_INSTALL == 'dnf -y install' ]]; then
+    if ! dnf list installed "Development Tools";then
+      echo -e "\e[93mWARN\e[0m: Building components not found, Installing."
+      ${PACKAGE_MANAGEMENT_INSTALL} "Development Tools"
+    fi
+  elif [[ $PACKAGE_MANAGEMENT_INSTALL == 'yum -y install' ]]; then
+    if ! yum list installed "Development Tools";then
+      echo -e "\e[93mWARN\e[0m: Building components not found, Installing."
+      ${PACKAGE_MANAGEMENT_INSTALL} "Development Tools"
+    fi
+  elif [[ $PACKAGE_MANAGEMENT_INSTALL == 'zypper install -y --no-recommends' ]]; then
+    if ! zypper se --installed-only gcc;then
+      echo -e "\e[93mWARN\e[0m: Building components not found, Installing."
+      ${PACKAGE_MANAGEMENT_INSTALL} gcc
+    fi
+  elif [[ $PACKAGE_MANAGEMENT_INSTALL == 'pacman -Syu --noconfirm' ]]; then
+    if ! pacman -Q base-devel;then
+      echo -e "\e[93mWARN\e[0m: Building components not found, Installing."
+      ${PACKAGE_MANAGEMENT_INSTALL} base-devel
+    fi
+  elif [[ $PACKAGE_MANAGEMENT_INSTALL == 'emerge -qv' ]]; then
+    if ! emerge -p sys-devel/base-system;then
+      echo -e "\e[93mWARN\e[0m: Building components not found, Installing."
+      ${PACKAGE_MANAGEMENT_INSTALL} sys-devel/base-system
+    fi
+  fi
+}
+
 # Function for go_installation
 install_go() {
     [[ $MACHINE == 386 ]] && GO_MACHINE=386
@@ -242,7 +279,7 @@ install_go() {
 }
 go_install() {
   install_software "which" "which"
-  install_software "gcc" "gcc"
+  install_building_components
 
   if ! GO_PATH=$(which go);then
     install_go
