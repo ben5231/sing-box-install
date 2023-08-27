@@ -160,13 +160,15 @@ install_log_and_config() {
 install_service() {
   cat <<EOF > /etc/systemd/system/sing-box.service
 [Unit]
+Description=sing-box service
+Documentation=https://sing-box.sagernet.org
 After=network.target nss-lookup.target
 
 [Service]
 User=root
 WorkingDirectory=/usr/local/share/sing-box
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
 ExecStart=/usr/local/bin/sing-box run -c /usr/local/etc/sing-box/config.json
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure
@@ -179,13 +181,15 @@ EOF
   echo -e "Installed: /etc/systemd/system/sing-box.service"
   cat <<EOF > /etc/systemd/system/sing-box@.service
 [Unit]
+Description=sing-box service
+Documentation=https://sing-box.sagernet.org
 After=network.target nss-lookup.target
 
 [Service]
 User=root
 WorkingDirectory=/usr/local/share/sing-box
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
 ExecStart=/usr/local/bin/sing-box run -c /usr/local/etc/sing-box/%i.json
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure
