@@ -416,10 +416,12 @@ If no action is specified, then help will be selected
 
 OPTION:
   install:
+    --beta                    If it's specified, the scrpit will install latest Pre-release version of sing-box. 
+                              If it's not specified, the scrpit will install latest release version by default.
     --go                      If it's specified, the scrpit will use go to install sing-box. 
                               If it's not specified, the scrpit will use curl by default.
     --tag=[Tags]              sing-box Install tag, if you specified it, the script will use go to install sing-box, and use your custom tags. 
-                              If it's not specified, the scrpit will use \033[38;5;208m@chika0801\033[0m's template by default.
+                              If it's not specified, the scrpit will use offcial default Tags by default.
   remove:
     --purge                   Remove all the sing-box files, include logs, configs, etc
 "
