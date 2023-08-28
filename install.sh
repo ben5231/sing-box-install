@@ -293,10 +293,10 @@ go_install() {
   [[ $MACHINE == amd64 ]] && GOAMD64=v2
   if [[ $go_type == default ]];then
     echo -e "\
-Use \033[38;5;208m@chika0801\033[0m's template by default.\
+Using offcial default Tags: with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_reality_server,with_clash_api .\
 "
     if ! CGO_ENABLED=1 GOOS=linux GOARCH=$MACHINE \
-    go install -v -tags with_wireguard,with_quic,with_utls,with_reality_server github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
+    go install -v -tags with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_reality_server,with_clash_api github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
       echo -e "Go Install Failed.\nExiting."
       exit 1
     fi
@@ -368,6 +368,7 @@ main() {
   install_service
 
   echo -e "\
+Thanks \033[38;5;208m@chika0801\033[0m.
 Installation Complete\
 "
   exit 0
@@ -398,7 +399,8 @@ Removed: /usr/local/share/sing-box/\
   echo -e "\
 Removed: /usr/local/bin/sing-box
 Removed: /etc/systemd/system/sing-box.service
-Removed: /etc/systemd/system/sing-box@.service\
+Removed: /etc/systemd/system/sing-box@.service
+Thanks \033[38;5;208m@chika0801\033[0m.\
 "
   exit 0
 }
