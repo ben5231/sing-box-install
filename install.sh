@@ -367,10 +367,7 @@ main() {
   install_log_and_config
   install_service
 
-  echo -e "\
-Thanks \033[38;5;208m@chika0801\033[0m.
-Installation Complete\
-"
+  # echo -e "Thanks \033[38;5;208m@chika0801\033[0m.\nInstallation Complete"
   exit 0
 }
 
@@ -399,9 +396,9 @@ Removed: /usr/local/share/sing-box/\
   echo -e "\
 Removed: /usr/local/bin/sing-box
 Removed: /etc/systemd/system/sing-box.service
-Removed: /etc/systemd/system/sing-box@.service
-Thanks \033[38;5;208m@chika0801\033[0m.\
+Removed: /etc/systemd/system/sing-box@.service\
 "
+# echo -e "Thanks \033[38;5;208m@chika0801\033[0m.\nInstallation Complete"
   exit 0
 }
 # Show help
