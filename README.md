@@ -46,6 +46,12 @@ Will be Install after sing-box run:
  bash -c "$(curl -L https://sing-box.vercel.app)" @ install --go
 ```
 
+**Install sing-box and set environment variable `CGO_ENABLED=1` while compling**
+
+```
+ bash -c "$(curl -L https://sing-box.vercel.app)" @ install --cgo
+```
+
 **Complie sing-box for windows**
 
 ```

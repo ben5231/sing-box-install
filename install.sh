@@ -8,6 +8,7 @@ go_type=
 remove_type=
 beta=false
 win=false
+CGO_ENABLED=0
 
 identify_the_operating_system_and_architecture() {
   if [[ "$(uname)" == 'Linux' ]]; then
@@ -295,17 +296,23 @@ go_install() {
 
   if [[ $win == true ]];then 
     export GOOS=windows
-    [[ $MACHINE == amd64 ]] && export GOAMD64=v3
+    export GOARCH=amd64 && export GOAMD64=v3
   elif [[ $win == false ]];then
     export GOOS=linux
     [[ $MACHINE == amd64 ]] && export GOAMD64=v2
+  fi
+
+  if [[ $CGO_ENABLED == 0 ]];then
+    export CGO_ENABLED=0
+  elif [[ $CGO_ENABLED == 1 ]];then
+    export CGO_ENABLED=1
   fi
 
   if [[ $go_type == default ]];then
     echo -e "\
 Using offcial default Tags: with_gvisor,with_quic,with_dhcp,with_wireguard,with_ech,with_utls,with_reality_server,with_clash_api.\
 "
-    if ! CGO_ENABLED=1 GOARCH=$MACHINE \
+    if ! GOARCH=$MACHINE \
     go install -v -tags with_gvisor,with_quic,with_dhcp,with_wireguard,with_ech,with_utls,with_reality_server,with_clash_api github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
       echo -e "Go Install Failed.\nExiting."
       exit 1
@@ -315,7 +322,7 @@ Using offcial default Tags: with_gvisor,with_quic,with_dhcp,with_wireguard,with_
 Using custom config:
 Tags: $tag\
 "
-    if ! CGO_ENABLED=1 GOARCH=$MACHINE \
+    if ! GOARCH=$MACHINE \
     go install -v -tags $tag github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
       echo -e "Go Install Failed.\nExiting."
       exit 1
@@ -420,7 +427,7 @@ Removed: /etc/systemd/system/sing-box@.service\
 }
 # Show help
 help() {
-  echo -e "usage: $0 ACTION [OPTION]...
+  echo -e "usage: install.sh ACTION [OPTION]...
 
 ACTION:
 install                   Install/Update sing-box
@@ -436,6 +443,7 @@ OPTION:
                               If it's not specified, the scrpit will use curl by default.
     --tag=[Tags]              sing-box Install tag, if you specified it, the script will use go to install sing-box, and use your custom tags. 
                               If it's not specified, the scrpit will use offcial default Tags by default.
+    --cgo                     Set \`CGO_ENABLED\` environment variable to 1
     --win                     If it's specified, the scrpit will use go to compile windows version of sing-box. 
   remove:
     --purge                   Remove all the sing-box files, include logs, configs, etc
@@ -458,10 +466,14 @@ for arg in "$@"; do
     --go)
       type="go"
       ;;
+    --cgo)
+      CGO_ENABLED=1
+      type="go"
+      ;;
     --tag=*)
       tag="${arg#*=}"
       go_type=custom
-      type=go
+      type="go"
       ;;
     help)
       action="help"
