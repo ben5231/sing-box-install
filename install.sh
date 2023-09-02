@@ -307,26 +307,27 @@ go_install() {
   elif [[ $CGO_ENABLED == 1 ]];then
     export CGO_ENABLED=1
   fi
+  
+  if echo $tag |grep -oP with_lwip >> /dev/null && [[ $CGO_ENABLED == 0 ]];then
+    echo -e "\033[1;31m\033[1mERROR:\033[0m Tag with_lwip \e[1mMUST HAVE environment variable CGO_ENABLED=1\e[0m\nExiting."
+    exit 1
+  fi
 
   if [[ $go_type == default ]];then
     echo -e "\
 Using offcial default Tags: with_gvisor,with_quic,with_dhcp,with_wireguard,with_ech,with_utls,with_reality_server,with_clash_api.\
 "
-    if ! GOARCH=$MACHINE \
-    go install -v -tags with_gvisor,with_quic,with_dhcp,with_wireguard,with_ech,with_utls,with_reality_server,with_clash_api github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
-      echo -e "Go Install Failed.\nExiting."
-      exit 1
-    fi
+    tag="with_gvisor,with_quic,with_dhcp,with_wireguard,with_ech,with_utls,with_reality_server,with_clash_api"
   elif [[ $go_type == custom ]]; then
     echo -e "\
 Using custom config:
 Tags: $tag\
 "
-    if ! GOARCH=$MACHINE \
-    go install -v -tags $tag github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
+  fi
+
+  if ! GOARCH=$MACHINE go install -v -tags $tag github.com/sagernet/sing-box/cmd/sing-box@dev-next;then
       echo -e "Go Install Failed.\nExiting."
       exit 1
-    fi
   fi
 
   if [[ $win == false ]];then
