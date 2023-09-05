@@ -127,7 +127,7 @@ check_root() {
 }
 
 curl() {
-  if ! $(type -P curl) -L -q --retry 5 --retry-delay 10 --retry-max-time 60 "$@";then
+  if ! $(type -P curl) -L -q --retry 5 --retry-delay 5 --retry-max-time 60 "$@";then
     echo -e "\033[1;31m\033[1mERROR:\033[0m Curl Failed, check your network"
     exit 1
   fi
@@ -213,7 +213,7 @@ EOF
 
 install_building_components() {
   if [[ $PACKAGE_MANAGEMENT_INSTALL == 'apt -y --no-install-recommends install' ]]; then
-    if ! dpkg -l | grep build-essential;then
+    if ! dpkg -l | awk '{print $2"\t","Version="$3,"ARCH="$4}' | grep build-essential ;then
       echo -e "\e[93mWARN\e[0m: Building components not found, Installing."
       ${PACKAGE_MANAGEMENT_INSTALL} build-essential
     fi
@@ -261,7 +261,7 @@ install_go() {
       echo -e "export PATH=\$PATH:/usr/local/go/bin" > /etc/profile.d/go.sh
       source /etc/profile.d/go.sh
       go version
-      GO_PATH=$(which go)
+      GO_PATH=$(type -P go)
       # install go for every users
       for user in $(ls /home); do
           local user_home="/home/$user"
@@ -285,10 +285,9 @@ install_go() {
   echo -e "INFO: go installed PATH: $GO_PATH"
 }
 go_install() {
-  install_software "which" "which"
   install_building_components
 
-  if ! GO_PATH=$(which go);then
+  if ! GO_PATH=$(type -P go);then
     install_go
   else
     echo "INFO: GO Found, PATH=$GO_PATH"
