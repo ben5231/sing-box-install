@@ -245,50 +245,11 @@ install_building_components() {
   fi
 }
 
-# Function for go_installation
-install_go() {
-    [[ $MACHINE == 386 ]] && GO_MACHINE=386
-    [[ $MACHINE == amd64 ]] && GO_MACHINE=amd64
-    [[ $MACHINE == arm ]] && GO_MACHINE=armv6l
-    [[ $MACHINE == arm64 ]] && GO_MACHINE=arm64
-    if [[ $GO_MACHINE == amd64 ]] || [[ $GO_MACHINE == arm64 ]] || [[ $GO_MACHINE == armv6l ]] || [[ $GO_MACHINE == 386 ]]; then
-      GO_VERSION=$(curl -sL https://go.dev/dl/ | sed -n 's/.*\(go[0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
-      echo -e "INFO: Installing go" 
-      curl -o /tmp/go.tar.gz https://go.dev/dl/$GO_VERSION.linux-$GO_MACHINE.tar.gz
-      rm -rf /usr/local/go
-      tar -C /usr/local -xzf /tmp/go.tar.gz
-      rm /tmp/go.tar.gz
-      echo -e "export PATH=\$PATH:/usr/local/go/bin" > /etc/profile.d/go.sh
-      source /etc/profile.d/go.sh
-      go version
-      GO_PATH=$(type -P go)
-      # install go for every users
-      for user in $(ls /home); do
-          local user_home="/home/$user"
-          local bashrc_path="$user_home/.bashrc"
-          local userid=$(id -u $user)
-          local usergid=$(id -g $user)
-          if [ -f "$bashrc_path" ]; then
-            if ! grep -q "export PATH=\$PATH:/usr/local/go/bin" "$bashrc_path"; then
-              echo "export PATH=\$PATH:/usr/local/go/bin" >> "$bashrc_path"
-              chown $userid:$usergid "$bashrc_path"
-            fi
-          fi
-      done
-      if ! grep -q "export PATH=\$PATH:/usr/local/go/bin" "/root/.bashrc"; then
-        echo -e "export PATH=\$PATH:/usr/local/go/bin" >> /root/.bashrc
-      fi
-    else
-      echo "\033[1;31m\033[1mERROR:\033[0m The architecture is not supported. Try to install go by yourself"
-      exit 1
-    fi
-  echo -e "INFO: go installed PATH: $GO_PATH"
-}
 go_install() {
   install_building_components
 
   if ! GO_PATH=$(type -P go);then
-    install_go
+    bash -c "$(curl -L https://github.com/KoinuDayo/go-install/raw/master/install.sh)"
   else
     echo "INFO: GO Found, PATH=$GO_PATH"
   fi
