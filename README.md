@@ -66,7 +66,7 @@ Will be Install after sing-box run:
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=KoinuDayo/sing-box-Install&type=Timeline)](https://star-history.com/#KoinuDayo/sing-box-Install&Timeline)
+[![Star History Chart](https://api.star-history.com/svg?repos=chise0713/sing-box-Install&type=Timeline)](https://star-history.com/#chise0713/sing-box-Install&Timeline)
 
 ## Thanks
 [@chika0801](https://github.com/chika0801)
