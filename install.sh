@@ -249,7 +249,7 @@ go_install() {
   install_building_components
 
   if ! GO_PATH=$(type -P go);then
-    bash -c "$(curl -L https://github.com/KoinuDayo/go-install/raw/master/install.sh)"
+    bash -c "$(curl -L https://github.com/chise0713/go-install/raw/master/install.sh)" @ install
   else
     echo "INFO: GO Found, PATH=$GO_PATH"
   fi
