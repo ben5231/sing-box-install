@@ -349,8 +349,8 @@ main() {
     curl_install
   fi
 
-  install_log_and_config
-  install_service
+  [[ $win == false ]] && install_log_and_config
+  [[ $win == false ]] && install_service
 
   # echo -e "Thanks \033[38;5;208m@chika0801\033[0m.\nInstallation Complete"
   exit 0
